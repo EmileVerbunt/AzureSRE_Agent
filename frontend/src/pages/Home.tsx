@@ -2,10 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { LISTING_TYPES, ROUTES } from '../data/constants';
 import { PET_TYPES } from '../data/constantsJsx';
+import { DataService } from '../data/dataService';
 import '../styles/Home.css';
 
 const Home: React.FC = () => {
   const [randomPetImage, setRandomPetImage] = useState<string>('/images/generic/doggo.jpg');
+  const [oopsStatus, setOopsStatus] = useState<string>('');
+  const [isTriggeringOops, setIsTriggeringOops] = useState<boolean>(false);
+
+  const handleOopsException = async () => {
+    setIsTriggeringOops(true);
+    setOopsStatus('');
+
+    try {
+      const status = await DataService.oopsException();
+      if (status >= 500) {
+        setOopsStatus(`oopsException triggered HTTP ${status}. Azure SRE Agent can now diagnose this failure.`);
+      } else {
+        setOopsStatus(`oopsException returned HTTP ${status}; expected a 500 diagnostic failure.`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown network error';
+      setOopsStatus(`Could not reach oopsException: ${message}`);
+    } finally {
+      setIsTriggeringOops(false);
+    }
+  };
+
   useEffect(() => {
     // List of pet images available in the public/images/pets directory
     const petImages = [
@@ -43,7 +66,16 @@ const Home: React.FC = () => {
           <p>Discover and share amazing spots for your furry, feathery, or scaly friends.</p>
           <div className="hero-buttons">
             <Link to={ROUTES.LISTINGS} className="btn btn-outline">Browse listings</Link>
+            <button
+              type="button"
+              className="btn btn-outline oops-exception-button"
+              onClick={handleOopsException}
+              disabled={isTriggeringOops}
+            >
+              {isTriggeringOops ? 'Triggering...' : 'oopsException'}
+            </button>
           </div>
+          {oopsStatus && <p className="oops-exception-status" role="status">{oopsStatus}</p>}
         </div>
         <div className="floating-pet-icons-container">
           <div className="floating-pet-icon" style={{ top: '15%', left: '10%', '--scale': '1.35', '--start-opacity': '1', '--mid-opacity': '0.3', animationDelay: '0s', animationDuration: '18s' } as React.CSSProperties}>🐶</div>

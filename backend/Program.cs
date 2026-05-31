@@ -91,4 +91,37 @@ app.MapGet("/api/debug/info", () => new
 .WithName("DebugInfo")
 .WithTags("Debug");
 
+app.MapGet("/api/oopsException", (ILoggerFactory loggerFactory, HttpContext httpContext) =>
+{
+    var logger = loggerFactory.CreateLogger("Octopets.Backend.OopsException");
+    return TriggerOopsException(logger, httpContext.TraceIdentifier);
+})
+.WithName("OopsException")
+.WithDescription("Intentionally throws a deterministic 500 exception for Azure SRE Agent diagnostics")
+.WithTags("Debug")
+.WithOpenApi();
+
 app.Run();
+
+static IResult TriggerOopsException(ILogger logger, string traceIdentifier)
+{
+    try
+    {
+        BuildPetFriendlyRecommendation(null);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "oopsException forced a diagnostic HTTP 500. TraceIdentifier: {TraceIdentifier}", traceIdentifier);
+        throw;
+    }
+
+    return Results.NoContent();
+}
+
+static void BuildPetFriendlyRecommendation(string? venueName)
+{
+    if (string.IsNullOrWhiteSpace(venueName))
+    {
+        throw new InvalidOperationException("oopsException demo failure: venue lookup returned an empty result while building a pet-friendly recommendation.");
+    }
+}

@@ -212,6 +212,51 @@ azd up
 
 ![azd up deploying resources to Azure](media/azdup.gif)
 
+#### 🛟 Azure SRE Agent deployment for 500 diagnostics
+
+Octopets includes a deterministic diagnostic endpoint, `GET /api/oopsException`, and a landing-page button named **oopsException**. Use it after deployment to generate an HTTP 500 that Azure SRE Agent can diagnose from Application Insights and turn into a GitHub issue.
+
+1. Deploy Octopets with `azd up` so the backend, frontend, and `octopets-appinsights` Application Insights resource are available.
+2. Create the SRE Agent from the Microsoft IaC templates outside this repository:
+   ```bash
+   git clone https://github.com/microsoft/sre-agent.git
+   cd sre-agent/sreagent-templates
+   ./bin/new-agent.sh --recipe azmon-lawappinsights --non-interactive \
+     --set agentName=octopets-sre-agent \
+     --set resourceGroup=rg-octopets-sre-agent \
+     --set location=eastus2 \
+     --set targetRGs=<octopets-resource-group> \
+     -o octopets-sre-agent/
+   ./bin/deploy.sh octopets-sre-agent/
+   ```
+3. Make sure the agent can take GitHub actions:
+   - In the Azure SRE Agent portal, set the agent action mode to **Review** or **Automatic**. Do not use **ReadOnly**, because issue creation is an action.
+   - Go to **Builder** > **Knowledge base** > **Add repository**, choose **GitHub**, and authenticate with OAuth or a PAT with `repo` scope.
+   - Add `EmileVerbunt/AzureSRE_Agent` from the repository picker and save it. The GitHub connector gives the agent source-code analysis plus issue creation access.
+4. Optionally verify the connected repository through the data plane:
+   ```bash
+   ENDPOINT=$(az rest -m GET \
+     --url "https://management.azure.com/subscriptions/<subscription-id>/resourceGroups/rg-octopets-sre-agent/providers/Microsoft.App/agents/octopets-sre-agent?api-version=2025-05-01-preview" \
+     --query properties.agentEndpoint -o tsv)
+   TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
+
+   curl -X PUT \
+     -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     "$ENDPOINT/api/v2/repos/AzureSRE_Agent" \
+     -d '{"properties":{"url":"https://github.com/EmileVerbunt/AzureSRE_Agent","type":"GitHub"}}'
+
+   curl -X POST \
+     -H "Authorization: Bearer $TOKEN" \
+     "$ENDPOINT/api/v2/repos/AzureSRE_Agent/test"
+   ```
+5. Activate the agent when needed:
+   ```bash
+   az rest -m POST \
+     --url "https://management.azure.com/subscriptions/<subscription-id>/resourceGroups/rg-octopets-sre-agent/providers/Microsoft.App/agents/octopets-sre-agent/start?api-version=2025-05-01-preview"
+   ```
+6. Press the **oopsException** button on the landing page, then run the prompt in `.github/prompts/sreagent.prompt.md` from the Azure SRE Agent chat. The prompt instructs the agent to diagnose the 500, correlate it to source code, and create a GitHub issue with the stack trace.
+
 ## 💼 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

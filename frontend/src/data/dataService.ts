@@ -15,6 +15,15 @@ const mockListings: Listing[] = listingsData;
 
 // API service
 export class DataService {
+    static async oopsException(): Promise<number> {
+        console.log('DataService: Triggering oopsException endpoint');
+
+        const response = await fetch(`${appConfig.apiUrl}/oopsException`);
+        console.log('DataService: oopsException returned status:', response.status);
+
+        return response.status;
+    }
+
     static async getListings(): Promise<Listing[]> {
         console.log('DataService: Fetching listings, using mock data:', appConfig.useMockData);
         
