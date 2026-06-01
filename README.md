@@ -214,7 +214,7 @@ azd up
 
 #### 🛟 Azure SRE Agent deployment for 500 diagnostics
 
-Octopets includes a deterministic diagnostic endpoint, `GET /api/oopsException`, and a landing-page button named **oopsException**. Use it after deployment to generate an HTTP 500 that Azure SRE Agent can diagnose from Application Insights and turn into a GitHub issue.
+Octopets includes a deterministic diagnostic endpoint, `GET /api/oopsException`, and a landing-page button named **oopsException** for local development only. The endpoint is not exposed in production deployments because it intentionally generates an HTTP 500 for Azure SRE Agent diagnostics.
 
 1. Deploy Octopets with `azd up` so the backend, frontend, and `octopets-appinsights` Application Insights resource are available.
 2. Create the SRE Agent from the Microsoft IaC templates outside this repository:
@@ -255,7 +255,7 @@ Octopets includes a deterministic diagnostic endpoint, `GET /api/oopsException`,
    az rest -m POST \
      --url "https://management.azure.com/subscriptions/<subscription-id>/resourceGroups/rg-octopets-sre-agent/providers/Microsoft.App/agents/octopets-sre-agent/start?api-version=2025-05-01-preview"
    ```
-6. Press the **oopsException** button on the landing page, then run the prompt in `.github/prompts/sreagent.prompt.md` from the Azure SRE Agent chat. The prompt instructs the agent to diagnose the 500, correlate it to source code, and create a GitHub issue with the stack trace.
+6. In a local development run, press the **oopsException** button on the landing page, then run the prompt in `.github/prompts/sreagent.prompt.md` from the Azure SRE Agent chat. The prompt instructs the agent to diagnose the 500, correlate it to source code, and create a GitHub issue with the stack trace.
 
 ## 💼 License
 

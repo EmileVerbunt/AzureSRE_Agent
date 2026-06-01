@@ -91,15 +91,18 @@ app.MapGet("/api/debug/info", () => new
 .WithName("DebugInfo")
 .WithTags("Debug");
 
-app.MapGet("/api/oopsException", (ILoggerFactory loggerFactory, HttpContext httpContext) =>
+if (app.Environment.IsDevelopment())
 {
-    var logger = loggerFactory.CreateLogger("Octopets.Backend.OopsException");
-    return TriggerOopsException(logger, httpContext.TraceIdentifier);
-})
-.WithName("OopsException")
-.WithDescription("Intentionally throws a deterministic 500 exception for Azure SRE Agent diagnostics")
-.WithTags("Debug")
-.WithOpenApi();
+    app.MapGet("/api/oopsException", (ILoggerFactory loggerFactory, HttpContext httpContext) =>
+    {
+        var logger = loggerFactory.CreateLogger("Octopets.Backend.OopsException");
+        return TriggerOopsException(logger, httpContext.TraceIdentifier);
+    })
+    .WithName("OopsException")
+    .WithDescription("Intentionally throws a deterministic 500 exception for Azure SRE Agent diagnostics")
+    .WithTags("Debug")
+    .WithOpenApi();
+}
 
 app.Run();
 

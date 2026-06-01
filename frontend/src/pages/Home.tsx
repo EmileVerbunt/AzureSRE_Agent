@@ -9,6 +9,7 @@ const Home: React.FC = () => {
   const [randomPetImage, setRandomPetImage] = useState<string>('/images/generic/doggo.jpg');
   const [oopsStatus, setOopsStatus] = useState<string>('');
   const [isTriggeringOops, setIsTriggeringOops] = useState<boolean>(false);
+  const showOopsException = process.env.NODE_ENV === 'development';
 
   const handleOopsException = async () => {
     setIsTriggeringOops(true);
@@ -66,14 +67,16 @@ const Home: React.FC = () => {
           <p>Discover and share amazing spots for your furry, feathery, or scaly friends.</p>
           <div className="hero-buttons">
             <Link to={ROUTES.LISTINGS} className="btn btn-outline">Browse listings</Link>
-            <button
-              type="button"
-              className="btn btn-outline oops-exception-button"
-              onClick={handleOopsException}
-              disabled={isTriggeringOops}
-            >
-              {isTriggeringOops ? 'Triggering...' : 'oopsException'}
-            </button>
+            {showOopsException && (
+              <button
+                type="button"
+                className="btn btn-outline oops-exception-button"
+                onClick={handleOopsException}
+                disabled={isTriggeringOops}
+              >
+                {isTriggeringOops ? 'Triggering...' : 'oopsException'}
+              </button>
+            )}
           </div>
           {oopsStatus && <p className="oops-exception-status" role="status">{oopsStatus}</p>}
         </div>
